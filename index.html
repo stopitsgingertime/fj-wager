@@ -500,36 +500,49 @@
             const leader = scores[1];
             const second = scores[2];
             const third = scores[3];
-            const gameType = classifyGame(leader, second);
 
+            // MINIMUM 1: To beat leader's current score (if they bet $0 or small)
+            const minToBeatLeader = leader - second + 1;
+
+            // MINIMUM 2: Cover third place
+            const thirdCover = third > 0 ? Math.max(0, (2 * third) - second + 1) : 0;
+
+            // Your minimum wager is the larger of these
+            const minWager = Math.max(minToBeatLeader, thirdCover);
+
+            // What will leader bet? (Assume cover bet)
             const leaderCover = Math.max(0, (2 * second) - leader + 1);
             const leaderIfWrong = leader - leaderCover;
-            const thirdCover = third > 0 ? Math.max(0, (2 * third) - second + 1) : 0;
-            const maxToBeatLeaderWrong = leaderIfWrong < second ? second - leaderIfWrong - 1 : 0;
 
-            if (["Lock", "Lock-Tie", "Crush"].includes(gameType)) {
+            // Can you stay above leader's wrong score if you're also wrong?
+            // If leader_if_wrong >= second, there's no safe bet
+            const maxStaySafe = leaderIfWrong < second ? second - leaderIfWrong - 1 : -1;
+
+            // If you can't even make the minimum bet, bet everything
+            if (minWager > second) {
                 return {
-                    min: thirdCover,
-                    max: Math.max(0, maxToBeatLeaderWrong),
-                    recommended: thirdCover,
-                    explanation: `Assume leader bets ${formatMoney(leaderCover)} to cover you. If wrong, they'll have ${formatMoney(leaderIfWrong)}. Bet ${formatMoney(thirdCover)} to cover 3rd while staying above ${formatMoney(leaderIfWrong)} if possible.`
+                    min: second,
+                    max: second,
+                    recommended: second,
+                    explanation: `You can't catch the leader (need ${formatMoney(minWager)}, you have ${formatMoney(second)}). Bet everything and hope for a miracle.`
+                };
+            }
+
+            // Can you both meet the minimum AND stay safe if wrong?
+            if (maxStaySafe >= minWager) {
+                return {
+                    min: minWager,
+                    max: maxStaySafe,
+                    recommended: minWager,
+                    explanation: `Bet at least ${formatMoney(minWager)} to beat leader if they stumble. If leader bets ${formatMoney(leaderCover)} and misses, they'll have ${formatMoney(leaderIfWrong)}. Stay below ${formatMoney(maxStaySafe + 1)} to beat them if you're both wrong.`
                 };
             } else {
-                if (maxToBeatLeaderWrong >= thirdCover) {
-                    return {
-                        min: thirdCover,
-                        max: maxToBeatLeaderWrong,
-                        recommended: thirdCover,
-                        explanation: `Two paths to win: (1) Leader wrong - stay above ${formatMoney(leaderIfWrong)}. (2) Both right - need ${formatMoney(leader + leaderCover - second + 1)}. Safe bet: ${formatMoney(thirdCover)} to cover 3rd and hope leader misses.`
-                    };
-                } else {
-                    return {
-                        min: thirdCover,
-                        max: second,
-                        recommended: thirdCover,
-                        explanation: `Stratton's Dilemma! Can't both cover 3rd (${formatMoney(thirdCover)}) AND stay below leader's wrong score (${formatMoney(leaderIfWrong)}). Convention: cover 3rd place.`
-                    };
-                }
+                return {
+                    min: minWager,
+                    max: second,
+                    recommended: minWager,
+                    explanation: `Bet ${formatMoney(minWager)} to beat leader's current score. If wrong, you can't stay above leader's wrong score (${formatMoney(leaderIfWrong)}), so just bet to win.`
+                };
             }
         }
 
