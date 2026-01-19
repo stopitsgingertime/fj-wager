@@ -309,7 +309,8 @@
             transition: background 0.1s;
         }
 
-        .calc-btn:active {
+        .calc-btn:active,
+        .calc-btn.pressed {
             background: rgba(255, 255, 255, 0.3);
         }
 
@@ -319,7 +320,8 @@
             font-weight: bold;
         }
 
-        .calc-btn.op:active {
+        .calc-btn.op:active,
+        .calc-btn.op.pressed {
             background: #ffed4a;
         }
 
@@ -328,10 +330,20 @@
             color: #fff;
         }
 
+        .calc-btn.clear:active,
+        .calc-btn.clear.pressed {
+            background: #f59e9e;
+        }
+
         .calc-btn.equals {
             background: #4ade80;
             color: #0a0a4a;
             font-weight: bold;
+        }
+
+        .calc-btn.equals:active,
+        .calc-btn.equals.pressed {
+            background: #86efac;
         }
 
         @media (max-width: 360px) {
@@ -440,9 +452,10 @@
                 <button class="calc-btn" onclick="calcDigit('3')">3</button>
                 <button class="calc-btn equals" onclick="calcEquals()">=</button>
 
-                <button class="calc-btn" onclick="calcDigit('0')" style="grid-column: span 2;">0</button>
+                <button class="calc-btn" onclick="calcDigit('0')">0</button>
                 <button class="calc-btn" onclick="calcDigit('00')">00</button>
-                <button class="calc-btn op" onclick="calcOp('*2')">×2</button>
+                <button class="calc-btn op" onclick="calcPlus1()">+1</button>
+                <button class="calc-btn op" onclick="calcTimes2()">×2</button>
             </div>
         </div>
     </div>
@@ -751,18 +764,22 @@
         }
 
         function calcOp(op) {
-            if (op === '*2') {
-                calcValue = String(parseFloat(calcValue) * 2);
-                updateCalcDisplay();
-                return;
-            }
-
             if (calcPrevValue !== null && !calcNewNumber) {
                 calcEquals();
             }
             calcPrevValue = calcValue;
             calcOperator = op;
             calcNewNumber = true;
+        }
+
+        function calcPlus1() {
+            calcValue = String(parseFloat(calcValue) + 1);
+            updateCalcDisplay();
+        }
+
+        function calcTimes2() {
+            calcValue = String(parseFloat(calcValue) * 2);
+            updateCalcDisplay();
         }
 
         function calcEquals() {
@@ -803,6 +820,21 @@
             }
             updateCalcDisplay();
         }
+
+        // Add touch feedback for mobile
+        document.querySelectorAll('.calc-btn').forEach(btn => {
+            btn.addEventListener('touchstart', function(e) {
+                this.classList.add('pressed');
+            }, { passive: true });
+
+            btn.addEventListener('touchend', function(e) {
+                this.classList.remove('pressed');
+            }, { passive: true });
+
+            btn.addEventListener('touchcancel', function(e) {
+                this.classList.remove('pressed');
+            }, { passive: true });
+        });
     </script>
 </body>
 </html>
